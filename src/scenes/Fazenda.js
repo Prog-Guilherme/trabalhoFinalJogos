@@ -2,6 +2,7 @@ import { Scene } from "phaser";
 import { CONFIG } from "../config";
 import Player from "../entities/Player";
 import Touch from "../entities/Touch";
+import Casa from "./Casa"
 
 export default class Fazenda extends Scene {
 
@@ -15,11 +16,33 @@ export default class Fazenda extends Scene {
 
     touch;
 
+    /** @type {Phaser.Physics.Arcade.Sprite} */
+    vaca;
+    vaca2;
+
     /** @type {Phaser.Physics.Arcade.Group} */
     groupObjects;
 
     /** @type {Phaser.Physics.Arcade.Sprite} */
     groupObjects;
+    
+    
+    cenouraLevel = 1;
+    couveflorLevel = 1;   
+    milhoLevel = 1;
+    beringeLevel = 1;
+
+    
+    plantaCenoura = false;
+    plantaMilho = false;
+    plantaCouveflor = false;
+    plantaBeringela = false;
+    
+
+    
+    
+
+    regador = false;
 
     isTouching = false;
 
@@ -45,7 +68,12 @@ export default class Fazenda extends Scene {
             frameHeight: CONFIG.TILE_SIZE * 2
        });
 
-       this.load.spritesheet('spriteGeral', 'mapas/tiles/geral.png', {
+       this.load.spritesheet('vaca2', 'mapas/tiles/vacas_anim.png', {
+        frameWidth: CONFIG.TILE_SIZE * 2,
+        frameHeight: CONFIG.TILE_SIZE * 2
+        });
+
+       this.load.spritesheet('sprite', 'mapas/tiles/geral.png', {
         frameWidth: CONFIG.TILE_SIZE,
         frameHeight: CONFIG.TILE_SIZE
        });
@@ -55,6 +83,7 @@ export default class Fazenda extends Scene {
         this.createMap();
         this.createLayers();
         this.createPlayer();
+        this.createVaca();
         this.createObjects();
         this.createColliders();
         this.createCamera();
@@ -66,7 +95,7 @@ export default class Fazenda extends Scene {
 
     createPlayer() {
         this.touch = new Touch(this, 50, 50);
-        this.player = new Player(this, 16*10, 16*4, this.touch);
+        this.player = new Player(this, 16*12, 16*4, this.touch);
         this.player.setDepth(2);
     }
 
@@ -81,6 +110,82 @@ export default class Fazenda extends Scene {
         // e as carregadas pelo Phaser
         this.map.addTilesetImage('geral', 'tiles-fazenda');
 
+    }
+
+    createVaca() {
+        this.vaca = this.physics.add.sprite(CONFIG.TILE_SIZE, 18* CONFIG.TILE_SIZE, 'vaca').setOrigin(0,1).setDepth(this.layers.length + 1).setFrame(0);
+        this.vaca.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNumbers('vaca', {
+                start: 0, end: 2 }),
+                frameRate: 6,
+                repeat: -1
+        });
+        this.vaca.play('idle')
+
+
+        this.vaca.anims.create({
+            key: 'andando',
+            frames: this.anims.generateFrameNumbers('vaca', {
+                start: 9, end: 16 }),
+                frameRate: 6,
+                repeat: -1,
+                
+        })
+        this.vaca.play('andando')
+        this.vaca.setVelocityX(7)
+        this.vaca.flipX = false;
+        
+        this.time.addEvent({
+            delay: 10, 
+            loop: true,
+            callback: () => {
+                if (this.vaca.body.blocked.right) {
+                    this.vaca.setVelocityX(-7);
+                    this.vaca.flipX = true;
+                } else if (this.vaca.body.blocked.left) {
+                    this.vaca.setVelocityX(7);
+                    this.vaca.flipX = false; 
+                }
+            }
+        });
+
+        this.vaca2 = this.physics.add.sprite(CONFIG.TILE_SIZE * 10, 22* CONFIG.TILE_SIZE, 'vaca2').setOrigin(0,1).setDepth(this.layers.length + 1).setFrame(0);
+        this.vaca2.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNumbers('vaca2', {
+                start: 176, end: 179 }),
+                frameRate: 6,
+                repeat: -1
+        });
+        this.vaca2.play('idle')
+
+
+        this.vaca2.anims.create({
+            key: 'andando',
+            frames: this.anims.generateFrameNumbers('vaca2', {
+                start: 137, end: 144 }),
+                frameRate: 6,
+                repeat: -1,
+                
+        })
+        this.vaca2.play('andando')
+        this.vaca2.setVelocityX(7)
+        this.vaca2.flipX = false;
+        
+        this.time.addEvent({
+            delay: 10, 
+            loop: true,
+            callback: () => {
+                if (this.vaca2.body.blocked.right) {
+                    this.vaca2.setVelocityX(-7);
+                    this.vaca2.flipX = true;
+                } else if (this.vaca2.body.blocked.left) {
+                    this.vaca2.setVelocityX(7);
+                    this.vaca2.flipX = false; 
+                }
+            }
+        });
     }
 
     // Automatizando
@@ -171,6 +276,8 @@ export default class Fazenda extends Scene {
 
             if( name.endsWith('Collision')) {
                 this.physics.add.collider(this.player, this.layers[name]);
+                this.physics.add.collider(this.vaca, this.layers[name]);
+                this.physics.add.collider(this.vaca2, this.layers[name]);
             }
         }
         
@@ -189,117 +296,147 @@ export default class Fazenda extends Scene {
             this.isTouching = false;
             return;
         }
-        // if(this.player.isAction){
-        //     this.isTouching = true;
-        //     //pegando sementes
-        //     if(object.name === 'cenoura' && this.sementeCenoura == false){
-        //         this.sementeCenoura = true;
-        //         console.log("peguei a semente de cenoura")
-        //     }
-        //     if(object.name === 'nabo' && this.sementeNabo == false){
-        //         this.sementeNabo = true;
-        //         console.log("peguei a semente de nabo")
-        //     }
-        //     if(object.name === 'beringela' && this.sementeNabo == false){
-        //         this.sementeBeringela = true;
-        //         console.log("peguei a semente de beringela")
-        //     }
-        //     //plantado a sementes
-        //     if(object.name === 'espacocenoura' && this.sementeCenoura == true ){
-        //         const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //         .setDepth(0)
-        //         pegaPosicao.setFrame(585)
-        //         this.sementeCenoura = false;
-        //         this.cenouraNivel = 2;
-        //     }
-        //     if(object.name === 'terrenoNabo' && this.sementeNabo == true ){
-        //         const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //         .setDepth(0)
-        //         pegaPosicao.setFrame(609)
-        //         this.sementeNabo = false;
-        //         this.naboNivel = 2;
-        //     }
-        //     if(object.name === 'espacoberingela' && this.sementeBeringela == true ){
-        //         const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //         .setDepth(0)
-        //         pegaPosicao.setFrame(657)
-        //         this.sementeBeringela = false;
-        //         this.beringelaNivel = 2;
-        //     }
-        //     //regando a determinada planta
-        //     if(object.name === 'regador' && this.regador == false) {
-        //         this.regador = true;
-        //     }
-        //     // fases da cenoura
-        //     if(object.name === 'espacocenoura' && this.regador == true && this.cenouraNivel == 2) {
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(586)
 
-        //         }, 300);
-        //         this.cenouraNivel = 3
-        //         this.regador = false;                      
+        if (this.player.isAction) {
+            if (object.name === 'porta') {
+            this.scene.switch('Casa')
+            }
+        }
+
+        if(this.player.isAction){
+            this.isTouching = true;
+            
+            if(object.name === 'couveflor' && this.plantaCouveflor == false){
+                this.plantaCouveflor = true;
+            }
+            if(object.name === 'milho' && this.plantaMilho == false){
+                this.plantaMilho = true;
+            }
+            if(object.name === 'beringela' && this.plantaBeringela == false){
+                this.plantaBeringela = true;
+            }
+            if(object.name === 'cenoura' && this.plantaCenoura == false){
+                this.plantaCenoura = true;
+            }
+            
+            if(object.name === 'espacocenoura' && this.plantaCenoura == true ){
+                const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                .setDepth(0)
+                pegaPosicao.setFrame(585)
+                this.plantaCenoura = false;
+                this.cenouraLevel = 2;
+            }
+            if(object.name === 'espacomilho' && this.plantaMilho == true ){
+                const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                .setDepth(0)
+                pegaPosicao.setFrame(609)
+                this.plantaMilho = false;
+                this.milhoLevel = 2;
+            }
+            if(object.name === 'espacoberingela' && this.plantaBeringela == true ){
+                const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                .setDepth(0)
+                pegaPosicao.setFrame(657)
+                this.plantaBeringela = false;
+                this.beringeLevel = 2;
+            }
+
+            if(object.name === 'espacocouveflor' && this.plantaCouveflor == true ){
+                const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                .setDepth(0)
+                pegaPosicao.setFrame(657)
+                this.plantaCouveflor = false;
+                this.couveflorLevel = 2;
+            }
+            
+            if(object.name === 'regador' && this.regador == false) {
+                this.regador = true;
+            }
+            
+            if(object.name === 'espacocenoura' && this.regador == true && this.cenouraLevel == 2) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(586)
+
+                }, 300);
+                this.cenouraLevel = 3
+                this.regador = false;                      
                 
-        //     }
-        //     if(object.name === 'terrenoCenoura' && this.regador == true && this.cenouraNivel == 3) {
-        //         console.log("entrei no nivel 3")
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(587)
-        //         }, 300);
-        //         this.regador = false;
-        //     }
+            }
+            if(object.name === 'terrenoCenoura' && this.regador == true && this.cenouraLevel == 3) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(587)
+                }, 300);
+                this.cenouraLevel = 1
+                this.regador = false;
+            }
 
-        //     //fase do nabo
+            if(object.name === 'espacomilho' && this.regador == true && this.milhoLevel == 2) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(610)
 
-        //     if(object.name === 'terrenoNabo' && this.regador == true && this.naboNivel == 2) {
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(610)
-
-        //         }, 300);
-        //         this.naboNivel = 3
-        //         this.regador = false;                      
+                }, 300);
+                this.milhoLevel = 3
+                this.regador = false;                      
                 
-        //     }
-        //     if(object.name === 'terrenoNabo' && this.regador == true && this.naboNivel == 3) {
-        //         console.log("entrei no nivel 3")
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(611)
-        //         }, 300);
-        //         this.regador = false;
-        //         this.naboNivel = 1;
-        //     }
+            }
+            if(object.name === 'espacomilho' && this.regador == true && this.milhoLevel == 3) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(611)
+                }, 300);
+                this.regador = false;
+                this.naboNivel = 1;
+            }
 
-        //     //fase da beringela
+            if(object.name === 'espacoberingela' && this.regador == true && this.beringeLevel == 2) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(658)
 
-        //     if(object.name === 'espacoberingela' && this.regador == true && this.beringelaNivel == 2) {
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(658)
-
-        //         }, 300);
-        //         this.beringelaNivel = 3
-        //         this.regador = false;                      
+                }, 300);
+                this.beringeLevel = 3
+                this.regador = false;                      
                 
-        //     }
-        //     if(object.name === 'espacoberingela' && this.regador == true && this.beringelaNivel == 3) {
-        //         console.log("entrei no nivel 3")
-        //         setTimeout(() => {
-        //             const pegaPosicao = this.physics.add.sprite(object.x, object.y,'spritGeral')
-        //             .setDepth(0)
-        //             pegaPosicao.setFrame(659)
-        //         }, 300);
-        //         this.regador = false;
-        //         this.beringelaNivel = 1
-        //     }
-        // }
+            }
+            if(object.name === 'espacoberingela' && this.regador == true && this.beringeLevel == 3) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(659)
+                }, 300);
+                this.regador = false;
+                this.beringeLevel = 1
+            }
+
+            if(object.name === 'espacocouveflor' && this.regador == true && this.couveflorLevel == 2) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(658)
+
+                }, 300);
+                this.couveflorLevel = 3
+                this.regador = false;                      
+                
+            }
+            if(object.name === 'espacocouveflor' && this.regador == true && this.couveflorLevel == 3) {
+                setTimeout(() => {
+                    const pegaPosicao = this.physics.add.sprite(object.x, object.y,'sprite')
+                    .setDepth(0)
+                    pegaPosicao.setFrame(659)
+                }, 300);
+                this.regador = false;
+                this.couveflorLevel = 1
+            }
+        }
 }
 
 }
